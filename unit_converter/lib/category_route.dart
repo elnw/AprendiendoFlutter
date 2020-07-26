@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:unitconverter/category.dart';
+import 'package:unitconverter/unit.dart';
 
 // TODO: Define any constants
 
@@ -34,6 +35,16 @@ class CategoryRoute extends StatelessWidget {
     Colors.purpleAccent,
     Colors.red,
   ];
+
+  List<Unit> _retrieveUnitList(String categoryName) {
+    return List.generate(10, (int i) {
+      i += 1;
+      return Unit(
+        name: '$categoryName Unit $i',
+        conversion: i.toDouble(),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +86,8 @@ class CategoryRoute extends StatelessWidget {
           return Category(
               name: _categoryNames[index],
           color:  _baseColors[index],
-          iconLocation: 'assets/Images/me-gusta.png',);
+          iconLocation: 'assets/Images/me-gusta.png',
+          units: _retrieveUnitList(_categoryNames[index]));
         },
         separatorBuilder: (BuildContext context, int index) => const Divider(),
         itemCount: _categoryNames.length);

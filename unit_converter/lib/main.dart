@@ -15,6 +15,13 @@ class UnitConverterApp extends StatelessWidget {
       routes: {
         '/categories': (context) => CategoryRoute(),
       },
+      theme: ThemeData(
+        textTheme: Theme.of(context).textTheme.apply(
+          bodyColor: Colors.black,
+          displayColor: Colors.grey[600]
+        ),
+        primaryColor: Colors.grey[500]
+      ),
     );
   }
 }

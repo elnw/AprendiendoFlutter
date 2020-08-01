@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'backdrop.dart';
 import 'category.dart';
 import 'category_tile.dart';
 import 'unit.dart';
-import 'backdrop.dart';
 import 'unit_converter.dart';
-
-final _backgroundColor = Colors.green[100];
 
 /// Category Route (screen).
 ///
@@ -23,12 +21,8 @@ class CategoryRoute extends StatefulWidget {
 }
 
 class _CategoryRouteState extends State<CategoryRoute> {
-  // TODO: Keep track of a default [Category], and the currently-selected
-  // [Category]
-
   Category _defaultCategory;
   Category _currentCategory;
-
   final _categories = <Category>[];
   static const _categoryNames = <String>[
     'Length',
@@ -79,22 +73,20 @@ class _CategoryRouteState extends State<CategoryRoute> {
   @override
   void initState() {
     super.initState();
-    // TODO: Set the default [Category] for the unit converter that opens
-
     for (var i = 0; i < _categoryNames.length; i++) {
-      _categories.add(Category(
+      var category = Category(
         name: _categoryNames[i],
         color: _baseColors[i],
-        iconLocation: Icons.thumbs_up_down,
+        iconLocation: Icons.cake,
         units: _retrieveUnitList(_categoryNames[i]),
-      ));
+      );
+      if (i == 0) {
+        _defaultCategory = category;
+      }
+      _categories.add(category);
     }
-
-    _defaultCategory = _categories[0];
-
   }
 
-  // TODO: Fill out this function
   /// Function to call when a [Category] is tapped.
   void _onCategoryTap(Category category) {
     setState(() {
@@ -102,19 +94,32 @@ class _CategoryRouteState extends State<CategoryRoute> {
     });
   }
 
-  /// Makes the correct number of rows for the list view.
+  // TODO: Use a GridView for landscape mode, passing in the device orientation
+  /// Makes the correct number of rows for the list view, based on whether the
+  /// device is portrait or landscape.
   ///
-  /// For portrait, we use a [ListView].
-  Widget _buildCategoryWidgets() {
-    return ListView.builder(
-      itemBuilder: (BuildContext context, int index) {
-        return CategoryTile(
-          category: _categories[index],
-          onTap: _onCategoryTap,
-        );
-      },
-      itemCount: _categories.length,
-    );
+  /// For portrait, we use a [ListView]. For landscape, we use a [GridView].
+  Widget _buildCategoryWidgets(Orientation orientation) {
+    if(orientation == Orientation.portrait){
+      return ListView.builder(
+        itemBuilder: (BuildContext context, int index) {
+          return CategoryTile(
+            category: _categories[index],
+            onTap: _onCategoryTap,
+          );
+        },
+        itemCount: _categories.length,
+      );
+    }else{
+      return GridView.count(
+          crossAxisCount: 2,
+          childAspectRatio: 3.0,
+          children: new List<Widget>.generate(_categories.length, (index){
+            return new CategoryTile(category: _categories[index], onTap: _onCategoryTap);
+          }),
+      );
+    }
+
   }
 
   /// Returns a list of mock [Unit]s.
@@ -130,19 +135,24 @@ class _CategoryRouteState extends State<CategoryRoute> {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Import and use the Backdrop widget
-    final listView = Container(
-      color: _backgroundColor,
-      padding: EdgeInsets.symmetric(horizontal: 8.0),
-      child: _buildCategoryWidgets(),
+    final listView = Padding(
+      padding: EdgeInsets.only(
+        left: 8.0,
+        right: 8.0,
+        bottom: 48.0,
+      ),
+      child: _buildCategoryWidgets(MediaQuery.of(context).orientation),
     );
 
     return Backdrop(
-      currentCategory: _currentCategory == null? _defaultCategory : _currentCategory,
+      currentCategory:
+      _currentCategory == null ? _defaultCategory : _currentCategory,
+      frontPanel: _currentCategory == null
+          ? UnitConverter(category: _defaultCategory)
+          : UnitConverter(category: _currentCategory),
       backPanel: listView,
-      frontTitle: Text('Unit converter'),
-      backTitle: Text('Select a category'),
-      frontPanel: _currentCategory == null? UnitConverter( category: _defaultCategory, ) : UnitConverter( category: _currentCategory,),
+      frontTitle: Text('Unit Converter'),
+      backTitle: Text('Select a Category'),
     );
   }
 }

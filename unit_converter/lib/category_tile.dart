@@ -81,16 +81,16 @@ class CategoryTile extends StatelessWidget {
               children: [
                 Padding(
                   padding: EdgeInsets.all(16.0),
-                  child: Icon(
+                  child: Image.network(
                     category.iconLocation,
-                    size: 60.0,
-                  ),
+                    width: 60.0,
+                    height: 60.0,),
                 ),
                 Center(
                   child: Text(
                     category.name,
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headline,
+                    style: Theme.of(context).textTheme.headline5,
                   ),
                 ),
               ],

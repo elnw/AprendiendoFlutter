@@ -70,8 +70,15 @@ class _CategoryRouteState extends State<CategoryRoute> {
     }),
   ];
 
-  // TODO: Remove the overriding of initState(). Instead, we use
-  // didChangeDependencies()
+  static const _rutasImagenes = <String>[
+    'https://raw.githubusercontent.com/flutter/udacity-course/master/course/10_icons_fonts/task_10_icons_fonts/assets/icons/length.png',
+    'https://raw.githubusercontent.com/flutter/udacity-course/master/course/10_icons_fonts/task_10_icons_fonts/assets/icons/area.png',
+    'https://raw.githubusercontent.com/flutter/udacity-course/master/course/10_icons_fonts/task_10_icons_fonts/assets/icons/volume.png',
+    'https://raw.githubusercontent.com/flutter/udacity-course/master/course/10_icons_fonts/task_10_icons_fonts/assets/icons/mass.png',
+    'https://raw.githubusercontent.com/flutter/udacity-course/master/course/10_icons_fonts/task_10_icons_fonts/assets/icons/time.png',
+    'https://raw.githubusercontent.com/flutter/udacity-course/master/course/10_icons_fonts/task_10_icons_fonts/assets/icons/digital_storage.png',
+    'https://raw.githubusercontent.com/flutter/udacity-course/master/course/10_icons_fonts/task_10_icons_fonts/assets/icons/power.png'
+  ];
 
 
   // TODO: Uncomment this out. We use didChangeDependencies() so that we can
@@ -97,7 +104,6 @@ class _CategoryRouteState extends State<CategoryRoute> {
     if (data is! Map) {
       throw ('Data retrieved from API is not a Map');
     }
-    // TODO: Create Categories and their list of Units, from the JSON asset
 
     var i=0;
     data.keys.forEach((key) {
@@ -107,7 +113,7 @@ class _CategoryRouteState extends State<CategoryRoute> {
       final Category categoria = Category(
           name: key,
           color: _baseColors[i],
-          iconLocation: Icons.cake,
+          iconLocation: _rutasImagenes[i],
           units: lista
       );
 

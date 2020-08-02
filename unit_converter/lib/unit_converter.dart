@@ -1,8 +1,12 @@
+
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
 
 import 'category.dart';
 import 'unit.dart';
+import 'Api.dart';
 
 const _padding = EdgeInsets.all(16.0);
 
@@ -28,8 +32,8 @@ class _UnitConverterState extends State<UnitConverter> {
   String _convertedValue = '';
   List<DropdownMenuItem> _unitMenuItems;
   bool _showValidationError = false;
-  // TODO: Pass this into the TextField so that the input value persists
   final _inputKey = GlobalKey(debugLabel: 'inputText');
+  final apiHelper = Api();
 
   @override
   void initState() {
@@ -95,10 +99,19 @@ class _UnitConverterState extends State<UnitConverter> {
     return outputNum;
   }
 
-  void _updateConversion() {
-    setState(() {
-      _convertedValue =
-          _format(_inputValue * (_toValue.conversion / _fromValue.conversion));
+  // TODO: If in the Currency [Category], call the API to retrieve the conversion.
+  // Remember, the API call is an async function.
+  void _updateConversion()  {
+    setState(() async{
+      if(widget.category.name == 'currency'){
+        final valorObtenido = await apiHelper.convert(widget.category.name, _fromValue, _toValue, _inputValue.toString());
+        _convertedValue = valorObtenido.toString();
+      }else{
+        _convertedValue =
+            _format(_inputValue * (_toValue.conversion / _fromValue.conversion));
+      }
+
+
     });
   }
 
@@ -193,9 +206,9 @@ class _UnitConverterState extends State<UnitConverter> {
           // You can read more about it here: https://flutter.io/text-input
           TextField(
             key: _inputKey,
-            style: Theme.of(context).textTheme.headline4,
+            style: Theme.of(context).textTheme.display1,
             decoration: InputDecoration(
-              labelStyle: Theme.of(context).textTheme.headline4,
+              labelStyle: Theme.of(context).textTheme.display1,
               errorText: _showValidationError ? 'Invalid number entered' : null,
               labelText: 'Input',
               border: OutlineInputBorder(
@@ -206,7 +219,6 @@ class _UnitConverterState extends State<UnitConverter> {
             // are also other keyboards for dates, emails, phone numbers, etc.
             keyboardType: TextInputType.number,
             onChanged: _updateInputValue,
-
           ),
           _createDropdown(_fromValue.name, _updateFromConversion),
         ],
@@ -229,11 +241,11 @@ class _UnitConverterState extends State<UnitConverter> {
           InputDecorator(
             child: Text(
               _convertedValue,
-              style: Theme.of(context).textTheme.headline4,
+              style: Theme.of(context).textTheme.display1,
             ),
             decoration: InputDecoration(
               labelText: 'Output',
-              labelStyle: Theme.of(context).textTheme.headline4,
+              labelStyle: Theme.of(context).textTheme.display1,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(0.0),
               ),
@@ -244,39 +256,32 @@ class _UnitConverterState extends State<UnitConverter> {
       ),
     );
 
-    // TODO: Use a ListView instead of a Column
     final converter = ListView(
-      scrollDirection: Axis.vertical,
-      children: <Widget>[
+      children: [
         input,
         arrows,
         output,
       ],
     );
 
-    // TODO: Use an OrientationBuilder to add a width to the unit converter
-    // in landscape mode
-    return OrientationBuilder(
-      builder: (BuildContext context, Orientation orientation){
-        switch(orientation){
-          case Orientation.portrait:
-            return Padding(
-              padding: _padding,
-              child: converter,
-            );
-          case Orientation.landscape:
-            return Padding(
-              padding: _padding,
-              child: Center(
-                child: Container(
-                  width: 450.0,
-                  child: converter,
-                ),
+    // Based on the orientation of the parent widget, figure out how to best
+    // lay out our converter.
+    return Padding(
+      padding: _padding,
+      child: OrientationBuilder(
+        builder: (BuildContext context, Orientation orientation) {
+          if (orientation == Orientation.portrait) {
+            return converter;
+          } else {
+            return Center(
+              child: Container(
+                width: 450.0,
+                child: converter,
               ),
             );
-        }
-        return null;
-      },
+          }
+        },
+      ),
     );
   }
 }

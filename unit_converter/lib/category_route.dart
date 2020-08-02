@@ -3,11 +3,13 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+
 import 'backdrop.dart';
 import 'category.dart';
 import 'category_tile.dart';
 import 'unit.dart';
 import 'unit_converter.dart';
+import 'package:unitconverter/Api.dart';
 
 /// Loads in unit conversion data, and displays the data.
 ///
@@ -32,8 +34,6 @@ class _CategoryRouteState extends State<CategoryRoute> {
   // `children` property, we call .toList() on it.
   // For more details, see https://github.com/dart-lang/sdk/issues/27755
   final _categories = <Category>[];
-
-
   static const _baseColors = <ColorSwatch>[
     ColorSwatch(0xFF6AB7A8, {
       'highlight': Color(0xFF6AB7A8),
@@ -69,27 +69,28 @@ class _CategoryRouteState extends State<CategoryRoute> {
       'error': Color(0xFF912D2D),
     }),
   ];
-
-  static const _rutasImagenes = <String>[
+  static const _icons = <String>[
     'https://raw.githubusercontent.com/flutter/udacity-course/master/course/10_icons_fonts/task_10_icons_fonts/assets/icons/length.png',
     'https://raw.githubusercontent.com/flutter/udacity-course/master/course/10_icons_fonts/task_10_icons_fonts/assets/icons/area.png',
     'https://raw.githubusercontent.com/flutter/udacity-course/master/course/10_icons_fonts/task_10_icons_fonts/assets/icons/volume.png',
     'https://raw.githubusercontent.com/flutter/udacity-course/master/course/10_icons_fonts/task_10_icons_fonts/assets/icons/mass.png',
     'https://raw.githubusercontent.com/flutter/udacity-course/master/course/10_icons_fonts/task_10_icons_fonts/assets/icons/time.png',
     'https://raw.githubusercontent.com/flutter/udacity-course/master/course/10_icons_fonts/task_10_icons_fonts/assets/icons/digital_storage.png',
-    'https://raw.githubusercontent.com/flutter/udacity-course/master/course/10_icons_fonts/task_10_icons_fonts/assets/icons/power.png'
+    'https://raw.githubusercontent.com/flutter/udacity-course/master/course/10_icons_fonts/task_10_icons_fonts/assets/icons/power.png',
+    'https://raw.githubusercontent.com/flutter/udacity-course/master/course/11_api/task_11_api/assets/icons/currency.png'
   ];
 
-
-  // TODO: Uncomment this out. We use didChangeDependencies() so that we can
-  // wait for our JSON asset to be loaded in (async).
   @override
   Future<void> didChangeDependencies() async {
     super.didChangeDependencies();
     // We have static unit conversions located in our
     // assets/data/regular_units.json
+    // and we want to also obtain up-to-date Currency conversions from the web
+    // We only want to load our data in once
     if (_categories.isEmpty) {
       await _retrieveLocalCategories();
+      // TODO: Call _retrieveApiCategory() here
+      await _retrieveApiCategory();
     }
   }
 
@@ -99,35 +100,49 @@ class _CategoryRouteState extends State<CategoryRoute> {
     // Dart Usage, see https://www.dartlang.org/guides/language/effective-dart/usage
     final json = DefaultAssetBundle
         .of(context)
-        .loadString('assets/data/goofy_units.json');
+        .loadString('assets/data/regular_units.json');
     final data = JsonDecoder().convert(await json);
     if (data is! Map) {
       throw ('Data retrieved from API is not a Map');
     }
-
-    var i=0;
+    var categoryIndex = 0;
     data.keys.forEach((key) {
+      final List<Unit> units =
+      data[key].map<Unit>((dynamic data) => Unit.fromJson(data)).toList();
 
-      final List<Unit> lista = data[key].map<Unit>((dynamic data) => Unit.fromJson(data)).toList();
-
-      final Category categoria = Category(
-          name: key,
-          color: _baseColors[i],
-          iconLocation: _rutasImagenes[i],
-          units: lista
+      var category = Category(
+        name: key,
+        units: units,
+        color: _baseColors[categoryIndex],
+        iconLocation: _icons[categoryIndex],
       );
-
       setState(() {
-        if(i==0){
-          _defaultCategory = categoria;
+        if (categoryIndex == 0) {
+          _defaultCategory = category;
         }
-        _categories.add(categoria);
+        _categories.add(category);
       });
-
-      i++;
+      categoryIndex += 1;
     });
+  }
 
+  // TODO: Add the Currency Category retrieved from the API, to our _categories
+  /// Retrieves a [Category] and its [Unit]s from an API on the web
+  Future<void> _retrieveApiCategory() async {
+    final nombre = 'currency';
+    final apiHelper = Api();
+    final currencyUnits = await apiHelper.getUnits(nombre);
 
+    final currencyCategory = Category(
+      name: nombre,
+      color: _baseColors.last,
+      units: currencyUnits,
+      iconLocation: _icons.last
+    );
+
+    setState(() {
+      _categories.add(currencyCategory);
+    });
   }
 
   /// Function to call when a [Category] is tapped.
@@ -165,20 +180,6 @@ class _CategoryRouteState extends State<CategoryRoute> {
       );
     }
   }
-
-  // TODO: Delete this function; instead, read in the units from the JSON asset
-  // inside _retrieveLocalCategories()
-  /// Returns a list of mock [Unit]s.
- /* List<Unit> _retrieveUnitList(String categoryName) {
-    // when the app first starts up
-    return List.generate(10, (int i) {
-      i += 1;
-      return Unit(
-        name: '$categoryName Unit $i',
-        conversion: i.toDouble(),
-      );
-    });
-  }*/
 
   @override
   Widget build(BuildContext context) {

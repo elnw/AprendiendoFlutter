@@ -1,5 +1,6 @@
 
 import 'dart:async';
+import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
@@ -34,6 +35,7 @@ class _UnitConverterState extends State<UnitConverter> {
   bool _showValidationError = false;
   final _inputKey = GlobalKey(debugLabel: 'inputText');
   final apiHelper = Api();
+  bool _showError = false;
 
   @override
   void initState() {
@@ -101,18 +103,28 @@ class _UnitConverterState extends State<UnitConverter> {
 
   // TODO: If in the Currency [Category], call the API to retrieve the conversion.
   // Remember, the API call is an async function.
-  void _updateConversion()  {
-    setState(() async{
-      if(widget.category.name == 'currency'){
-        final valorObtenido = await apiHelper.convert(widget.category.name, _fromValue, _toValue, _inputValue.toString());
-        _convertedValue = valorObtenido.toString();
-      }else{
+  Future<void> _updateConversion() async  {
+
+    if(widget.category.name == 'Currency') {
+      double valorObtenido;
+      try {
+        valorObtenido = await apiHelper.convert(
+            widget.category.name, _fromValue, _toValue, _inputValue.toString());
+        setState(() {
+          _convertedValue = _format(valorObtenido);
+        });
+      } catch (ex) {
+        setState(() {
+          _showError = true;
+        });
+      }
+    }else{
+      setState(() {
+        _showError = false;
         _convertedValue =
             _format(_inputValue * (_toValue.conversion / _fromValue.conversion));
-      }
-
-
-    });
+      });
+    }
   }
 
   void _updateInputValue(String input) {
@@ -196,92 +208,133 @@ class _UnitConverterState extends State<UnitConverter> {
 
   @override
   Widget build(BuildContext context) {
-    final input = Padding(
-      padding: _padding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // This is the widget that accepts text input. In this case, it
-          // accepts numbers and calls the onChanged property on update.
-          // You can read more about it here: https://flutter.io/text-input
-          TextField(
-            key: _inputKey,
-            style: Theme.of(context).textTheme.display1,
-            decoration: InputDecoration(
-              labelStyle: Theme.of(context).textTheme.display1,
-              errorText: _showValidationError ? 'Invalid number entered' : null,
-              labelText: 'Input',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(0.0),
-              ),
-            ),
-            // Since we only want numerical input, we use a number keyboard. There
-            // are also other keyboards for dates, emails, phone numbers, etc.
-            keyboardType: TextInputType.number,
-            onChanged: _updateInputValue,
+    if(_showError){
+      print('hubo error');
+      return SingleChildScrollView(
+        child: Container(
+          padding: EdgeInsets.all(16.0),
+          margin: EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.all(Radius.circular(10.0)),
           ),
-          _createDropdown(_fromValue.name, _updateFromConversion),
-        ],
-      ),
-    );
-
-    final arrows = RotatedBox(
-      quarterTurns: 1,
-      child: Icon(
-        Icons.compare_arrows,
-        size: 40.0,
-      ),
-    );
-
-    final output = Padding(
-      padding: _padding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          InputDecorator(
-            child: Text(
-              _convertedValue,
+          child: Column(
+            children: <Widget>[
+              Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.0),
+                  child: Icon(Icons.warning, size: 80.0,),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text(
+                  'No se pudo conectar con el servicio web',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24.0
+                  ),),
+              )
+            ],
+          ),
+        ),
+      );
+    }else{
+      print('no hubo error');
+      final input = Padding(
+        padding: _padding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // This is the widget that accepts text input. In this case, it
+            // accepts numbers and calls the onChanged property on update.
+            // You can read more about it here: https://flutter.io/text-input
+            TextField(
+              key: _inputKey,
               style: Theme.of(context).textTheme.display1,
+              decoration: InputDecoration(
+                labelStyle: Theme.of(context).textTheme.display1,
+                errorText: _showValidationError ? 'Invalid number entered' : null,
+                labelText: 'Input',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(0.0),
+                ),
+              ),
+              // Since we only want numerical input, we use a number keyboard. There
+              // are also other keyboards for dates, emails, phone numbers, etc.
+              keyboardType: TextInputType.number,
+              onChanged: _updateInputValue,
             ),
-            decoration: InputDecoration(
-              labelText: 'Output',
-              labelStyle: Theme.of(context).textTheme.display1,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(0.0),
+            _createDropdown(_fromValue.name, _updateFromConversion),
+          ],
+        ),
+      );
+
+      final arrows = RotatedBox(
+        quarterTurns: 1,
+        child: Icon(
+          Icons.compare_arrows,
+          size: 40.0,
+        ),
+      );
+
+      final output = Padding(
+        padding: _padding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            InputDecorator(
+              child: Text(
+                _convertedValue,
+                style: Theme.of(context).textTheme.display1,
+              ),
+              decoration: InputDecoration(
+                labelText: 'Output',
+                labelStyle: Theme.of(context).textTheme.display1,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(0.0),
+                ),
               ),
             ),
-          ),
-          _createDropdown(_toValue.name, _updateToConversion),
+            _createDropdown(_toValue.name, _updateToConversion),
+          ],
+        ),
+      );
+
+      final converter = ListView(
+        children: [
+          input,
+          arrows,
+          output,
         ],
-      ),
-    );
+      );
 
-    final converter = ListView(
-      children: [
-        input,
-        arrows,
-        output,
-      ],
-    );
+      // Based on the orientation of the parent widget, figure out how to best
+      // lay out our converter.
+      return Padding(
+        padding: _padding,
+        child: OrientationBuilder(
+          builder: (BuildContext context, Orientation orientation) {
+            if (orientation == Orientation.portrait) {
+              return converter;
+            } else {
+              return Center(
+                child: Container(
+                  width: 450.0,
+                  child: converter,
+                ),
+              );
+            }
+          },
+        ),
+      );
+    }
 
-    // Based on the orientation of the parent widget, figure out how to best
-    // lay out our converter.
-    return Padding(
-      padding: _padding,
-      child: OrientationBuilder(
-        builder: (BuildContext context, Orientation orientation) {
-          if (orientation == Orientation.portrait) {
-            return converter;
-          } else {
-            return Center(
-              child: Container(
-                width: 450.0,
-                child: converter,
-              ),
-            );
-          }
-        },
-      ),
-    );
+
+
+
+
   }
 }

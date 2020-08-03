@@ -30,12 +30,19 @@ class Api {
       final httpResponse = await httpRequest.close();
 
       if(httpResponse.statusCode != HttpStatus.ok){
-        return null;
+        return new List();
       }
 
       final responseBody = await httpResponse.transform(utf8.decoder).join();
       final jsonresponse = json.decode(responseBody);
-      return jsonresponse['units'].map<Unit>((dynamic data) => Unit.fromJson(data)).toList();
+
+      if(jsonresponse == null || jsonresponse['units'] == null){
+        return new List<Unit>();
+      }else{
+        return jsonresponse['units'].map<Unit>((dynamic data) => Unit.fromJson(data)).toList();
+      }
+
+
     }else{
       return null;
     }
@@ -52,6 +59,7 @@ class Api {
   /// Returns a double, which is the converted amount. Returns null on error.
 
   Future<double> convert(String categoria, Unit from, Unit to, String cantidad) async{
+    categoria = categoria.toLowerCase();
     final uri = Uri.https(url, '/$categoria/convert',{
       'from': from.name,
       'to': to.name,

@@ -29,6 +29,7 @@ class CategoryRoute extends StatefulWidget {
 class _CategoryRouteState extends State<CategoryRoute> {
   Category _defaultCategory;
   Category _currentCategory;
+  bool _existeError = false;
   // Widgets are supposed to be deeply immutable objects. We can update and edit
   // _categories as we build our app, and when we pass it into a widget's
   // `children` property, we call .toList() on it.
@@ -89,7 +90,6 @@ class _CategoryRouteState extends State<CategoryRoute> {
     // We only want to load our data in once
     if (_categories.isEmpty) {
       await _retrieveLocalCategories();
-      // TODO: Call _retrieveApiCategory() here
       await _retrieveApiCategory();
     }
   }
@@ -129,20 +129,33 @@ class _CategoryRouteState extends State<CategoryRoute> {
   // TODO: Add the Currency Category retrieved from the API, to our _categories
   /// Retrieves a [Category] and its [Unit]s from an API on the web
   Future<void> _retrieveApiCategory() async {
-    final nombre = 'currency';
-    final apiHelper = Api();
-    final currencyUnits = await apiHelper.getUnits(nombre);
-
-    final currencyCategory = Category(
-      name: nombre,
-      color: _baseColors.last,
-      units: currencyUnits,
-      iconLocation: _icons.last
-    );
+    final nombre = 'Currency';
 
     setState(() {
-      _categories.add(currencyCategory);
+      _categories.add(Category(
+        name: nombre,
+        units: [],
+        iconLocation: _icons.last,
+        color: _baseColors.last
+      ));
     });
+
+    final apiHelper = Api();
+    final currencyUnits = await apiHelper.getUnits(nombre.toLowerCase());
+
+    if(currencyUnits.isNotEmpty){
+      setState(() {
+        _categories.removeLast();
+        _categories.add(Category(
+          name: nombre,
+          units: currencyUnits,
+          color: _baseColors.last,
+          iconLocation: _icons.last,
+        ));
+      });
+    }
+
+
   }
 
   /// Function to call when a [Category] is tapped.
@@ -162,19 +175,21 @@ class _CategoryRouteState extends State<CategoryRoute> {
         itemBuilder: (BuildContext context, int index) {
           return CategoryTile(
             category: _categories[index],
-            onTap: _onCategoryTap,
+            onTap: ((_categories[index].units.isEmpty ) && _categories[index] == _categories.last)? null: _onCategoryTap,
           );
         },
         itemCount: _categories.length,
       );
     } else {
+
       return GridView.count(
         crossAxisCount: 2,
         childAspectRatio: 3.0,
         children: _categories.map((Category c) {
+
           return CategoryTile(
             category: c,
-            onTap: _onCategoryTap,
+            onTap: ((c.units.isEmpty) && c == _categories.last)? null: _onCategoryTap,
           );
         }).toList(),
       );
